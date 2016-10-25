@@ -16,3 +16,6 @@ $setrole - Enables you to set a role to a user. Usage:
 $setrole @Discord_User "role name 1, role name 2, role name 3"
 ```
 $listroles - Lists all roles by name and ID. Usage is self explanitory.
+
+# Stuff I need to do
+Self assignable roles, default role command... Autorole...
