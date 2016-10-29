@@ -1,11 +1,14 @@
 import discord
 from discord.ext import commands
+from .utils.dataIO import fileIO, dataIO
 from .utils import checks
+from __main__ import send_cmd_help, settings
 from random import randint
 from random import choice, shuffle
 import json
 import urllib.request
 import requests
+import os
 
 class RoleTools:
     """Commands for assigning roles, self assigned roles, and default roles."""
@@ -13,6 +16,15 @@ class RoleTools:
     def __init__(self, bot):
         self.bot = bot
 
+        self.rolePath = "data/roles/selfroles.json"
+        if not os.path.isfile(self.rolePath):
+            print("Creating new selfrole database.")
+            dataIO.save_json(self.rolePath, "{}")
+        self.selfrole_list = dataIO.load_json(self.rolePath)
+
+    #@commands.command()
+    #async def rolehelp(self):
+        
     
     @commands.command(no_pm=True, pass_context=True)
     @checks.admin_or_permissions(manage_roles=True)
@@ -73,5 +85,31 @@ class RoleTools:
         role_list += "```"
         await self.bot.say(role_list)
         
+    @commands.group(no_pm=True, pass_context=True)
+    async def selfrole(self, ctx):
+        """Manages self assignable roles"""
+        if ctx.invoked_subcommand is None:
+            await send_cmd_help(ctx)
+    
+    @selfrole.command(name="add")
+    async def _selfrole_add(self, role : discord.Role):
+        """Adds a self assignable role"""
+        if role.id not in self.selfrole_list:
+            self.selfrole_list.append(role.id)
+            fileIO("data/roles/selfroles.json", "save", self.selfrole_list)
+            await self.bot.say("The role is now self assignable.")
+        else:
+            await self.bot.say("this role is already on the list.")
+
+    @selfrole.command(name="remove")
+    async def _selfrole_remove(self, role : discord.Role):
+        """Removes a self assignable role from the list."""
+        await self.bot.say("placeholder")
+
+    @selfrole.command(name="list")
+    async def _selfrole_list(self):
+        """Lists all self assignable roles in this server."""
+        await self.bot.say("Placeholder")
+    
 def setup(bot):
     bot.add_cog(RoleTools(bot))
