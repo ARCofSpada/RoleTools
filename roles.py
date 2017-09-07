@@ -15,23 +15,22 @@ class RoleTools:
 
     def __init__(self, bot):
         self.bot = bot
-
         self.rolePath = "data/roles/selfroles.json"
-        if not os.path.isfile(self.rolePath):
-            print("Creating new selfrole database.")
-            dataIO.save_json(self.rolePath, "{}")
         self.selfrole_list = dataIO.load_json(self.rolePath)
 
-    #@commands.command()
-    #async def rolehelp(self):
-        
     
+    @commands.command(pass_context=True)
+    async def channelid(self, ctx):
+        await self.bot.say(ctx.message.channel.id)
+
     @commands.command(no_pm=True, pass_context=True)
     @checks.admin_or_permissions(manage_roles=True)
     #async def setrole(self, ctx, user : discord.Member, *, role : discord.Role):
     async def setrole(self, ctx, user : discord.Member, *, roles):
         """Adds roles to users.\nExample: setrole (@)User \"Role 1, Role 2, Role 3\" """
-        roles = roles.replace("\"", "")
+        #roles = roles.replace("\"", "")
+        roles = roles.strip()
+        print(roles)
         rolesList = roles.split(", ")
         server = ctx.message.server
         
@@ -58,22 +57,20 @@ class RoleTools:
         
         
     @commands.command(no_pm=True, pass_context=True)
-    async def assignme(self, ctx):
-        """Assign default roles to yourself."""
-        rolesList = ["role 1", "role 2", "role 3"]
+    async def assignme(self, ctx, role : discord.Role):
+        """Add self assignable roles to yourself."""
         user = ctx.message.author #get user that typed the command
         error = False
-        errormsg = "There was a problem setting the following roles: "
-        for roleName in rolesList:
-            for role in server.roles:
-                if roleName == role.name:
-                    try:
-                        await self.bot.add_roles(user, role)
-                    except discord.Forbidden:
-                        error = True
-                        errormsg += role.name
-        if error == True:
-            await self.bot.say(errormsg)
+        for srole in ctx.message.server.roles:
+            if srole.name == role.name:
+              if role.id in self.selfrole_list:
+                try:
+                    await self.bot.add_roles(user, role)
+                    await self.bot.say("You now have the " + role.name + " role.")
+                except discord.Forbidden:
+                    await self.bot.say("There was an error setting that role.")
+              else:
+                await self.bot.say("That's not in the list of self assignable roles.")
                         
     @commands.command(no_pm=True, pass_context=True)
     async def listroles(self, ctx):
@@ -92,6 +89,7 @@ class RoleTools:
             await send_cmd_help(ctx)
     
     @selfrole.command(name="add")
+    @checks.admin_or_permissions(manage_roles=True)
     async def _selfrole_add(self, role : discord.Role):
         """Adds a self assignable role"""
         if role.id not in self.selfrole_list:
@@ -102,9 +100,15 @@ class RoleTools:
             await self.bot.say("this role is already on the list.")
 
     @selfrole.command(name="remove")
+    @checks.admin_or_permissions(manage_roles=True)
     async def _selfrole_remove(self, role : discord.Role):
         """Removes a self assignable role from the list."""
-        await self.bot.say("placeholder")
+        if role in self.selfrole_list:
+            self.selfrole_list.remove(role)
+            fileIO("data/roles/selfroles.json", "save", self.selfrole_list)
+            await self.bot.say("role removed from selfrole list.")
+        else:
+            await self.bot.say("This role isn't in the list.")
 
     @selfrole.command(name="list")
     async def _selfrole_list(self):
